@@ -1,10 +1,9 @@
-// Controller de sessions.
-// Estructura inicial nada más: todavía no hay registro, login, JWT,
-// cookies ni Passport (se incorporan en las próximas entregas).
+import sessionsService from '../services/sessions.service.js';
 
 export async function register(req, res, next) {
     try {
-        res.status(501).json({ status: 'pending', message: 'Registro no implementado todavía' });
+        const newUser = await sessionsService.register(req.body);
+        res.status(201).json({ status: 'success', payload: newUser });
     } catch (error) {
         next(error);
     }

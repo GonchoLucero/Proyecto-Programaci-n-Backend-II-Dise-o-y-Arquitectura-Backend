@@ -37,11 +37,14 @@ proyecto-backend-ii/
 │   │   ├── user.controller.js
 │   │   └── ticket.controller.js
 │   ├── services/                
-│   │   └── events.service.js
-│   ├── repositories/            # Desacoplan el Service del DAO concreto.
+│   │   ├── events.service.js
+│   │   └── sessions.service.js
+│   ├── repositories/            
 │   │   └── events.repository.js
-│   ├── dao/                     # Acceso a datos (habla directo con Mongoose).
+|   |   |__ users.repository.js
+│   ├── dao/                    
 │   │   └── events.dao.js
+|   |   |__ events.dao.js
 │   ├── models/                  
 │   │   ├── event.model.js
 │   │   ├── user.model.js
@@ -49,10 +52,84 @@ proyecto-backend-ii/
 │   ├── middlewares/            
 │   │   └── errorHandler.js
 │   └── utils/                   
-│       ├── hash.js                # bcrypt (hash/compare de contraseñas)
-│       └── paths.js               # helper de __dirname para ESM
+│       ├── hash.js                
+│       └── paths.js
+|       └── errors.js
+|       |__ validators.js       
 ├── .env.example
 ├── .gitignore
 ├── package.json
 └── README.md
+```
+
+## Rutas disponibles
+
+| Método | Endpoint                  | Descripción                                             |
+|--------|----------------------------|-------------------------------------------------------------|
+| GET    | `/api/health`                 | Verifica que el servidor está activo |
+| GET    | `/api/events`                 | Lista los eventos |
+| POST   | `/api/sessions/register`      | Registro de usuarios|
+| GET    | `/api/users`                  | Lista los usuarios |
+| GET    | `/api/tickets`                | Lista los tickets/inscripciones|
+
+## Registro de usuarios — `POST /api/sessions/register`
+
+### Campos que espera el body (JSON)
+
+| Campo        | Tipo  
+
+| `first_name` | string 
+| `last_name`  | string 
+| `email`      | string 
+| `password`   | string |
+
+
+### Ejemplo de request
+
+```bash
+curl -X POST http://localhost:8080/api/sessions/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "first_name": "Ana",
+    "last_name": "Pérez",
+    "email": "Ana@Mail.com ",
+    "password": "Secreta123"
+  }'
+```
+
+### Respuestas posibles
+
+**201 - Registro exitoso** (email ya normalizado, sin `password`):
+
+```json
+{
+  "status": "success",
+  "payload": {
+    "id": "665f2a...",
+    "first_name": "Ana",
+    "last_name": "Pérez",
+    "email": "ana@mail.com",
+    "role": "user"
+  }
+}
+```
+
+**400 - Campos faltantes:**
+```json
+{ "status": "error", "message": "Faltan campos obligatorios" }
+```
+
+**400 - Email con formato inválido:**
+```json
+{ "status": "error", "message": "Formato de email inválido" }
+```
+
+**400 - Contraseña muy corta:**
+```json
+{ "status": "error", "message": "La contraseña debe tener al menos 6 caracteres" }
+```
+
+**409 - Email ya registrado:**
+```json
+{ "status": "error", "message": "El email ya está registrado" }
 ```
