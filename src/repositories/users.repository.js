@@ -1,4 +1,4 @@
-import usersDao from "../dao/users.dao.js";
+import usersDao from '../dao/users.dao.js';
 
 class UsersRepository {
     constructor(dao) {

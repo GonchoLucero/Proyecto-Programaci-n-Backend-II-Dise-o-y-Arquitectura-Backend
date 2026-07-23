@@ -19,7 +19,10 @@ export async function login(req, res, next) {
 
 export async function current(req, res, next) {
     try {
-        res.status(501).json({ status: 'pending', message: 'Sesión actual no implementada todavía' });
+        res.status(501).json({
+            status: 'pending',
+            message: 'Sesión actual no implementada todavía',
+        });
     } catch (error) {
         next(error);
     }

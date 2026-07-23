@@ -1,7 +1,7 @@
-import usersRepository from "../repositories/users.repository.js";
-import { createHash } from "../utils/hash.js";
-import { isValidEmail, isValidPasswordLength, MIN_PASSWORD_LENGTH } from "../utils/validators.js";
-import { AppError } from "../utils/errors.js";
+import usersRepository from '../repositories/users.repository.js';
+import { createHash } from '../utils/hash.js';
+import { isValidEmail, isValidPasswordLength, MIN_PASSWORD_LENGTH } from '../utils/validators.js';
+import { AppError } from '../utils/errors.js';
 
 class SessionsService {
     constructor(repository) {
@@ -10,13 +10,13 @@ class SessionsService {
 
     async register({ first_name, last_name, email, password }) {
         if (!first_name || !last_name || !email || !password) {
-            throw new AppError("Faltan campos obligatorios", 400);
+            throw new AppError('Faltan campos obligatorios', 400);
         }
 
         const normalizedEmail = email.trim().toLowerCase();
 
         if (!isValidEmail(normalizedEmail)) {
-            throw new AppError("Formato de email inválido", 400);
+            throw new AppError('Formato de email inválido', 400);
         }
 
         if (!isValidPasswordLength(password)) {
@@ -28,7 +28,7 @@ class SessionsService {
 
         const existingUser = await this.repository.findByEmail(normalizedEmail);
         if (existingUser) {
-            throw new AppError("El email ya está registrado", 409);
+            throw new AppError('El email ya está registrado', 409);
         }
 
         const hashedPassword = await createHash(password);
