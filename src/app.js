@@ -1,4 +1,5 @@
 import express from 'express';
+import cookieParser from 'cookie-parser';
 
 import userRouter from './routes/user.routes.js';
 import ticketRouter from './routes/ticket.routes.js';
@@ -11,6 +12,7 @@ const app = express();
 // Middlewares globales
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Healthcheck
 app.get('/api/health', (req, res) => {
@@ -23,7 +25,7 @@ app.use('/api/sessions', sessionsRouter);
 app.use('/api/users', userRouter);
 app.use('/api/tickets', ticketRouter);
 
-// Manejo de rutas no encontradas y errores (siempre al final)
+// Manejo de rutas no encontradas y errores
 app.use(notFoundHandler);
 app.use(errorHandler);
 

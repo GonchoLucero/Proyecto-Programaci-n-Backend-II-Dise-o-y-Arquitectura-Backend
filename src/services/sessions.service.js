@@ -1,7 +1,8 @@
 import usersRepository from '../repositories/users.repository.js';
-import { createHash } from '../utils/hash.js';
+import { createHash, isValidPassword } from '../utils/hash.js';
 import { isValidEmail, isValidPasswordLength, MIN_PASSWORD_LENGTH } from '../utils/validators.js';
 import { AppError } from '../utils/errors.js';
+import { generateToken } from '../utils/jwt.js';
 
 class SessionsService {
     constructor(repository) {
@@ -47,6 +48,33 @@ class SessionsService {
             email: newUser.email,
             role: newUser.role,
         };
+    }
+
+    async login({ email, password }) {
+        const invalidCredentials = () => new AppError('Credenciales inválidas', 401);
+
+        if (!email || !password) {
+            throw invalidCredentials();
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+        const user = await this.repository.findByEmail(normalizedEmail);
+        if (!user) {
+            throw invalidCredentials();
+        }
+
+        const passwordMatches = await isValidPassword(password, user.password);
+        if (!passwordMatches) {
+            throw invalidCredentials();
+        }
+
+        const token = generateToken({
+            id: user._id,
+            email: user.email,
+            role: user.role,
+        });
+
+        return token;
     }
 }
 
