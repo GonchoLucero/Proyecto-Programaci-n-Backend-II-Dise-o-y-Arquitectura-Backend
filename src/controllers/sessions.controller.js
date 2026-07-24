@@ -1,10 +1,9 @@
-import sessionsService from '../services/sessions.service.js';
+import { generateToken } from '../utils/jwt.js';
 import { env } from '../config/env.js';
 
 export async function register(req, res, next) {
     try {
-        const newUser = await sessionsService.register(req.body);
-        res.status(201).json({ status: 'success', payload: newUser });
+        res.status(201).json({ status: 'success', payload: req.user });
     } catch (error) {
         next(error);
     }
@@ -12,7 +11,9 @@ export async function register(req, res, next) {
 
 export async function login(req, res, next) {
     try {
-        const token = await sessionsService.login(req.body);
+        const { id, email, role } = req.user;
+
+        const token = generateToken({ id, email, role });
 
         res.cookie('currentUser', token, {
             httpOnly: true,

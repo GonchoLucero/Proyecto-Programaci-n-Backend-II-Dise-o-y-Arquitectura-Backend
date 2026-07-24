@@ -11,9 +11,21 @@ Plataforma de gestión de **eventos, tickets/inscripciones y usuarios**.
 - Node.js
 - Express
 - Mongoose (MongoDB)
-- bcrypt 
+- bcrypt (hashing de contraseñas)
+- jsonwebtoken (JWT)
+- Passport.js + passport-local + passport-jwt (estrategias de autenticación)
+- cookie-parser (lectura de cookies HttpOnly)
 - dotenv (variables de entorno)
+- Prettier (formato de código estandarizado)
 - Módulos ES (ESM: `import` / `export`)
+
+## Instalación
+
+```bash
+git clone <https://github.com/GonchoLucero/Proyecto-Programaci-n-Backend-II-Dise-o-y-Arquitectura-Backend.git>
+cd proyecto-backend-ii
+npm install
+```
 
 
 ## Estructura de carpetas
@@ -21,41 +33,43 @@ Plataforma de gestión de **eventos, tickets/inscripciones y usuarios**.
 ```
 proyecto-backend-ii/
 ├── src/
-│   ├── app.js                 # Configura Express (middlewares, rutas). No levanta el server.
-│   ├── server.js              # Conecta a MongoDB y levanta el servidor HTTP.
+│   ├── app.js                    
+│   ├── server.js                  # Conecta a MongoDB y levanta el servidor HTTP.
 │   ├── config/
-│   │   ├── env.js               # Lectura centralizada de variables de entorno.
-│   │   └── database.js          # Conexión a MongoDB con Mongoose.
-│   ├── routes/                 
+│   │   ├── env.js                   # Lectura centralizada de variables de entorno.
+│   │   ├── database.js              # Conexión a MongoDB con Mongoose.
+│   │   └── passport.config.js       
+│   ├── routes/
 │   │   ├── event.routes.js
-│   │   ├── sessions.routes.js
+│   │   ├── sessions.routes.js      
 │   │   ├── user.routes.js
 │   │   └── ticket.routes.js
-│   ├── controllers/            
+│   ├── controllers/
 │   │   ├── event.controller.js
-│   │   ├── sessions.controller.js
+│   │   ├── sessions.controller.js   
 │   │   ├── user.controller.js
 │   │   └── ticket.controller.js
-│   ├── services/                
+│   ├── services/                   
 │   │   ├── events.service.js
 │   │   └── sessions.service.js
-│   ├── repositories/            
-│   │   └── events.repository.js
-|   |   |__ users.repository.js
-│   ├── dao/                    
-│   │   └── events.dao.js
-|   |   |__ events.dao.js
-│   ├── models/                  
+│   ├── repositories/               
+│   │   ├── events.repository.js
+│   │   └── users.repository.js
+│   ├── dao/                        
+│   │   ├── events.dao.js
+│   │   └── users.dao.js
+│   ├── models/
 │   │   ├── event.model.js
-│   │   ├── user.model.js
+│   │   ├── user.model.js            
 │   │   └── ticket.model.js
-│   ├── middlewares/            
+│   ├── middlewares/
 │   │   └── errorHandler.js
-│   └── utils/                   
-│       ├── hash.js                
-│       └── paths.js
-|       └── errors.js
-|       |__ validators.js       
+│   └── utils/
+│       ├── hash.js                 
+│       ├── jwt.js                   
+│       ├── validators.js            
+│       ├── errors.js                
+│       └── paths.js                
 ├── .env.example
 ├── .gitignore
 ├── package.json
@@ -66,21 +80,25 @@ proyecto-backend-ii/
 
 | Método | Endpoint                  | Descripción                                             |
 |--------|----------------------------|-------------------------------------------------------------|
-| GET    | `/api/health`                 | Verifica que el servidor está activo |
-| GET    | `/api/events`                 | Lista los eventos |
-| POST   | `/api/sessions/register`      | Registro de usuarios|
-| GET    | `/api/users`                  | Lista los usuarios |
-| GET    | `/api/tickets`                | Lista los tickets/inscripciones|
+| GET    | `/api/health`                | Verifica que el servidor está activo                          |
+| GET    | `/api/events`                | Lista los eventos                                              |
+| POST   | `/api/sessions/register`    | Registro de usuario (estrategia `register`)                    |
+| POST   | `/api/sessions/login`       | Login de usuario (estrategia `login`, setea la cookie `currentUser`) |
+| GET    | `/api/sessions/current`     | Devuelve el usuario autenticado (estrategia `current`)          |
+| POST   | `/api/sessions/logout`      | Cierra la sesión (elimina la cookie, no pasa por Passport)      |
+| GET    | `/api/users`                  | Lista los usuarios (sin exponer `password`)                    |
+| GET    | `/api/tickets`                | Lista los tickets/inscripciones                                |
 
+---
 ## Registro de usuarios — `POST /api/sessions/register`
 
 ### Campos que espera el body (JSON)
 
 | Campo        | Tipo  
 
-| `first_name` | string 
-| `last_name`  | string 
-| `email`      | string 
+| `first_name` | string |
+| `last_name`  | string |
+| `email`      | string |
 | `password`   | string |
 
 
@@ -133,3 +151,60 @@ curl -X POST http://localhost:8080/api/sessions/register \
 ```json
 { "status": "error", "message": "El email ya está registrado" }
 ```
+
+### Ejemplo
+
+```bash
+curl -i -c cookies.txt -X POST http://localhost:8080/api/sessions/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ana@mail.com","password":"Secreta123"}'
+```
+
+**200 - Login correcto** (además setea la cookie `currentUser`):
+```json
+{ "status": "success", "message": "Login correcto" }
+```
+
+**401 - Credenciales inválidas** (mismo mensaje sin importar qué falló):
+```json
+{ "status": "error", "message": "Credenciales inválidas" }
+```
+
+---
+
+## `GET /api/sessions/current`
+
+### Ejemplo
+
+```bash
+curl -b cookies.txt http://localhost:8080/api/sessions/current
+```
+
+**200 - Autenticado:**
+```json
+{ "status": "success", "payload": { "id": "665f2a...", "email": "ana@mail.com", "role": "user" } }
+```
+
+**401 - Sin cookie o token inválido/expirado:**
+```json
+{ "status": "error", "message": "No autenticado" }
+```
+
+---
+
+## `POST /api/sessions/logout`
+
+### Ejemplo
+
+```bash
+curl -b cookies.txt -c cookies.txt -X POST http://localhost:8080/api/sessions/logout
+```
+
+**200:**
+```json
+{ "status": "success", "message": "Sesión cerrada" }
+```
+
+Después del logout, un `GET /api/sessions/current` con la misma cookie vuelve a dar `401`.
+
+---

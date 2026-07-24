@@ -6,6 +6,7 @@ import ticketRouter from './routes/ticket.routes.js';
 import eventRouter from './routes/event.routes.js';
 import sessionsRouter from './routes/sessions.routes.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
+import passport, { initPassport } from './config/passport.config.js';
 
 const app = express();
 
@@ -13,6 +14,10 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Passport
+initPassport();
+app.use(passport.initialize());
 
 // Healthcheck
 app.get('/api/health', (req, res) => {

@@ -2,7 +2,6 @@ import usersRepository from '../repositories/users.repository.js';
 import { createHash, isValidPassword } from '../utils/hash.js';
 import { isValidEmail, isValidPasswordLength, MIN_PASSWORD_LENGTH } from '../utils/validators.js';
 import { AppError } from '../utils/errors.js';
-import { generateToken } from '../utils/jwt.js';
 
 class SessionsService {
     constructor(repository) {
@@ -68,13 +67,11 @@ class SessionsService {
             throw invalidCredentials();
         }
 
-        const token = generateToken({
+        return {
             id: user._id,
             email: user.email,
             role: user.role,
-        });
-
-        return token;
+        };
     }
 }
 
