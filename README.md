@@ -33,43 +33,45 @@ npm install
 ```
 proyecto-backend-ii/
 ├── src/
-│   ├── app.js                    
+│   ├── app.js                     
 │   ├── server.js                  # Conecta a MongoDB y levanta el servidor HTTP.
 │   ├── config/
 │   │   ├── env.js                   # Lectura centralizada de variables de entorno.
 │   │   ├── database.js              # Conexión a MongoDB con Mongoose.
 │   │   └── passport.config.js       
 │   ├── routes/
-│   │   ├── event.routes.js
-│   │   ├── sessions.routes.js      
-│   │   ├── user.routes.js
+│   │   ├── event.routes.js          
+│   │   ├── sessions.routes.js
+│   │   ├── user.routes.js         
 │   │   └── ticket.routes.js
 │   ├── controllers/
 │   │   ├── event.controller.js
-│   │   ├── sessions.controller.js   
+│   │   ├── sessions.controller.js
 │   │   ├── user.controller.js
 │   │   └── ticket.controller.js
-│   ├── services/                   
+│   ├── services/                    
 │   │   ├── events.service.js
 │   │   └── sessions.service.js
 │   ├── repositories/               
 │   │   ├── events.repository.js
 │   │   └── users.repository.js
-│   ├── dao/                        
+│   ├── dao/                         
 │   │   ├── events.dao.js
 │   │   └── users.dao.js
 │   ├── models/
-│   │   ├── event.model.js
-│   │   ├── user.model.js            
+│   │   ├── event.model.js           
+│   │   ├── user.model.js           
 │   │   └── ticket.model.js
 │   ├── middlewares/
-│   │   └── errorHandler.js
+│   │   ├── errorHandler.js
+│   │   ├── auth.middleware.js      
+│   │   └── authorize.middleware.js  
 │   └── utils/
-│       ├── hash.js                 
+│       ├── hash.js                  
 │       ├── jwt.js                   
-│       ├── validators.js            
+│       ├── validators.js           
 │       ├── errors.js                
-│       └── paths.js                
+│       └── paths.js                 
 ├── .env.example
 ├── .gitignore
 ├── package.json
@@ -208,3 +210,24 @@ curl -b cookies.txt -c cookies.txt -X POST http://localhost:8080/api/sessions/lo
 Después del logout, un `GET /api/sessions/current` con la misma cookie vuelve a dar `401`.
 
 ---
+
+## Roles y autorización
+
+### Roles disponibles
+
+El modelo `User` tiene un campo `role` con default `'user'` y tres valores posibles: `user`, `organizer`, `admin`.
+
+### Matriz de permisos
+
+| Acción                              | `user` | `organizer` | `admin` |
+|--------------------------------------|:------:|:------------:|:-------:|
+| Consultar eventos publicados          | ✅     | ✅           | ✅      |
+| Crear eventos                         | ❌     | ✅           | ✅      |
+| Modificar/cancelar eventos propios    | ❌     | ✅           | ✅      |
+| Modificar cualquier evento            | ❌     | ❌           | ✅      |
+| Ver todos los usuarios                | ❌     | ❌           | ✅      |
+
+### 401 vs 403 — la diferencia
+
+- **401 (No autenticado)**: no sabemos quién sos. Falta la cookie, o el JWT es inválido/expiró.
+- **403 (No autorizado)**: sabemos quién sos (la sesión es válida), pero tu rol no te permite hacer esa acción puntual.

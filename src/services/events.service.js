@@ -1,8 +1,6 @@
 import eventsRepository from '../repositories/events.repository.js';
+import { AppError } from '../utils/errors.js';
 
-// El Service concentra la lógica de negocio.
-// En esta pre-entrega solo delega al repository; en próximas entregas
-// se sumará validación, control de cupos e inscripciones.
 class EventsService {
     constructor(repository) {
         this.repository = repository;
@@ -16,8 +14,27 @@ class EventsService {
         return this.repository.getById(id);
     }
 
-    createEvent(eventData) {
-        return this.repository.create(eventData);
+    createEvent(eventData, organizerId) {
+        return this.repository.create({ ...eventData, organizer: organizerId });
+    }
+
+    async updateEvent(id, updates, currentUser) {
+        const event = await this.repository.getById(id);
+
+        if (!event) {
+            throw new AppError('Evento no encontrado', 404);
+        }
+
+        const isOwner = event.organizer?.toString() === currentUser.id;
+        const isAdmin = currentUser.role === 'admin';
+
+        if (!isOwner && !isAdmin) {
+            throw new AppError('No podés modificar un evento que no te pertenece', 403);
+        }
+
+        const { organizer, ...safeUpdates } = updates;
+
+        return this.repository.update(id, safeUpdates);
     }
 }
 

@@ -17,6 +17,10 @@ class EventsRepository {
     create(eventData) {
         return this.dao.create(eventData);
     }
+
+    update(id, updates) {
+        return this.dao.update(id, updates);
+    }
 }
 
 export default new EventsRepository(eventsDao);

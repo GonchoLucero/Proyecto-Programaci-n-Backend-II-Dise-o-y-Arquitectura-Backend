@@ -1,6 +1,5 @@
 import { eventModel } from '../models/event.model.js';
 
-// DAO (Data Access Object): única capa que habla directamente con Mongoose.
 class EventsDao {
     async getAll() {
         return eventModel.find();
@@ -12,6 +11,10 @@ class EventsDao {
 
     async create(eventData) {
         return eventModel.create(eventData);
+    }
+
+    async update(id, updates) {
+        return eventModel.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
     }
 }
 
