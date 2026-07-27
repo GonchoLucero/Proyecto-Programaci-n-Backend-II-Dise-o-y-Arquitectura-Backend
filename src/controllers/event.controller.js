@@ -2,8 +2,17 @@ import eventsService from '../services/events.service.js';
 
 export async function getAll(req, res, next) {
     try {
-        const events = await eventsService.getAllEvents();
-        res.status(200).json({ status: 'success', payload: events });
+        const result = await eventsService.listEvents(req.query);
+        res.status(200).json({ status: 'success', ...result });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function getById(req, res, next) {
+    try {
+        const event = await eventsService.getEventById(req.params.id);
+        res.status(200).json({ status: 'success', payload: event });
     } catch (error) {
         next(error);
     }
@@ -21,6 +30,19 @@ export async function createEvent(req, res, next) {
 export async function updateEvent(req, res, next) {
     try {
         const updatedEvent = await eventsService.updateEvent(req.params.id, req.body, req.user);
+        res.status(200).json({ status: 'success', payload: updatedEvent });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function updateEventStatus(req, res, next) {
+    try {
+        const updatedEvent = await eventsService.updateEventStatus(
+            req.params.id,
+            req.body.status,
+            req.user
+        );
         res.status(200).json({ status: 'success', payload: updatedEvent });
     } catch (error) {
         next(error);

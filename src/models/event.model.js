@@ -1,8 +1,20 @@
 import { Schema, model, Types } from 'mongoose';
 
+export const EVENT_STATUSES = ['draft', 'published', 'cancelled', 'finished'];
+
 const eventSchema = new Schema(
     {
-        name: {
+        title: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        description: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        category: {
             type: String,
             required: true,
             trim: true,
@@ -11,24 +23,25 @@ const eventSchema = new Schema(
             type: Date,
             required: true,
         },
-        place: {
+        location: {
             type: String,
             required: true,
             trim: true,
+        },
+        capacity: {
+            type: Number,
+            required: true,
+            min: 1,
         },
         price: {
             type: Number,
             required: true,
             min: 0,
         },
-        capacity: {
-            type: Number,
-            required: true,
-            min: 0,
-        },
         status: {
-            type: Boolean,
-            default: true,
+            type: String,
+            enum: EVENT_STATUSES,
+            default: 'draft',
         },
         organizer: {
             type: Types.ObjectId,

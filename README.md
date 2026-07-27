@@ -80,16 +80,20 @@ proyecto-backend-ii/
 
 ## Rutas disponibles
 
-| Método | Endpoint                  | Descripción                                             |
-|--------|----------------------------|-------------------------------------------------------------|
-| GET    | `/api/health`                | Verifica que el servidor está activo                          |
-| GET    | `/api/events`                | Lista los eventos                                              |
-| POST   | `/api/sessions/register`    | Registro de usuario (estrategia `register`)                    |
+| Método | Endpoint                    | Descripción                                                          |
+|--------|-----------------------------|----------------------------------------------------------------------|
+| GET    | `/api/health`               | Verifica que el servidor está activo                                 |
+| POST   | `/api/events`               | Crea un evento                                                       |
+| GET    | `/api/events`               | Lista los eventos                                                    |
+| GET    | `/api/events/:id`           | Detalle de un evento                                                 |
+| PUT    | `/api/events/:id`           | Modifica un evento                                                   |
+| PATCH  | `/api/events/:id/status`    | Cambia el estado del evento                                          |
+| POST   | `/api/sessions/register`    | Registro de usuario (estrategia `register`)                          |
 | POST   | `/api/sessions/login`       | Login de usuario (estrategia `login`, setea la cookie `currentUser`) |
-| GET    | `/api/sessions/current`     | Devuelve el usuario autenticado (estrategia `current`)          |
-| POST   | `/api/sessions/logout`      | Cierra la sesión (elimina la cookie, no pasa por Passport)      |
-| GET    | `/api/users`                  | Lista los usuarios (sin exponer `password`)                    |
-| GET    | `/api/tickets`                | Lista los tickets/inscripciones                                |
+| GET    | `/api/sessions/current`     | Devuelve el usuario autenticado (estrategia `current`)               |
+| POST   | `/api/sessions/logout`      | Cierra la sesión (elimina la cookie, no pasa por Passport)           |
+| GET    | `/api/users`                | Lista los usuarios (sin exponer `password`)                          |
+| GET    | `/api/tickets`              | Lista los tickets/inscripciones                                      |
 
 ---
 ## Registro de usuarios — `POST /api/sessions/register`
@@ -231,3 +235,13 @@ El modelo `User` tiene un campo `role` con default `'user'` y tres valores posib
 
 - **401 (No autenticado)**: no sabemos quién sos. Falta la cookie, o el JWT es inválido/expiró.
 - **403 (No autorizado)**: sabemos quién sos (la sesión es válida), pero tu rol no te permite hacer esa acción puntual.
+
+### Reglas de negocio events
+
+- **Fecha pasada**: no se puede crear un evento con `date` anterior a ahora.
+- **Capacidad/precio**: `capacity` debe ser `> 0`; `price` no puede ser negativo (se valida tanto al crear como al modificar).
+- **Propiedad del recurso**: un `organizer` solo puede modificar (`PUT`) o cambiar el estado (`PATCH .../status`) de sus propios eventos. Un `admin` puede modificar cualquiera.
+- **Eventos cancelados**: una vez que un evento pasa a `status: cancelled`, no se puede modificar (ni `PUT` ni `PATCH .../status`).
+- **Publicar eventos finalizados o cancelados**: `PATCH .../status` con `status: published` se rechaza si el evento ya está `finished` o `cancelled`.
+- **El `organizer` nunca sale del body**: tanto al crear como al modificar, se ignora cualquier `organizer` que venga en el body — siempre se usa `req.user.id`.
+- **Borrado físico**: no existe un endpoint de `DELETE`. "Cancelar" un evento es cambiarle el `status` a `cancelled` vía `PATCH`.
