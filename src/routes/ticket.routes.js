@@ -1,8 +1,10 @@
 import { Router } from 'express';
-import { getAllTickets } from '../controllers/ticket.controller.js';
+import { getMyTickets, cancelTicket } from '../controllers/ticket.controller.js';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-router.get('/', getAllTickets);
+router.get('/my-tickets', authMiddleware, getMyTickets);
+router.patch('/:tid/cancel', authMiddleware, cancelTicket);
 
 export default router;

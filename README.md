@@ -15,6 +15,7 @@ Plataforma de gestión de **eventos, tickets/inscripciones y usuarios**.
 - jsonwebtoken (JWT)
 - Passport.js + passport-local + passport-jwt (estrategias de autenticación)
 - cookie-parser (lectura de cookies HttpOnly)
+- Nodemailer (email de confirmación de inscripciones)
 - dotenv (variables de entorno)
 - Prettier (formato de código estandarizado)
 - Módulos ES (ESM: `import` / `export`)
@@ -33,17 +34,17 @@ npm install
 ```
 proyecto-backend-ii/
 ├── src/
-│   ├── app.js                     
-│   ├── server.js                  # Conecta a MongoDB y levanta el servidor HTTP.
+│   ├── app.js
+│   ├── server.js                        # Conecta a MongoDB y levanta el servidor HTTP.
 │   ├── config/
-│   │   ├── env.js                   # Lectura centralizada de variables de entorno.
-│   │   ├── database.js              # Conexión a MongoDB con Mongoose.
-│   │   └── passport.config.js       
+│   │   ├── env.js                       # Lectura centralizada de variables de entorno.
+│   │   ├── database.js                  # Conexión a MongoDB con Mongoose.
+│   │   └── passport.config.js
 │   ├── routes/
-│   │   ├── event.routes.js          
+│   │   ├── event.routes.js         
 │   │   ├── sessions.routes.js
-│   │   ├── user.routes.js         
-│   │   └── ticket.routes.js
+│   │   ├── user.routes.js
+│   │   └── ticket.routes.js         
 │   ├── controllers/
 │   │   ├── event.controller.js
 │   │   ├── sessions.controller.js
@@ -51,27 +52,31 @@ proyecto-backend-ii/
 │   │   └── ticket.controller.js
 │   ├── services/                    
 │   │   ├── events.service.js
-│   │   └── sessions.service.js
-│   ├── repositories/               
+│   │   ├── sessions.service.js
+│   │   └── tickets.service.js         
+│   ├── repositories/
 │   │   ├── events.repository.js
-│   │   └── users.repository.js
+│   │   ├── users.repository.js
+│   │   └── tickets.repository.js
 │   ├── dao/                         
 │   │   ├── events.dao.js
-│   │   └── users.dao.js
+│   │   ├── users.dao.js
+│   │   └── tickets.dao.js           
 │   ├── models/
-│   │   ├── event.model.js           
-│   │   ├── user.model.js           
-│   │   └── ticket.model.js
+│   │   ├── event.model.js
+│   │   ├── user.model.js
+│   │   └── ticket.model.js          
 │   ├── middlewares/
 │   │   ├── errorHandler.js
-│   │   ├── auth.middleware.js      
-│   │   └── authorize.middleware.js  
+│   │   ├── auth.middleware.js
+│   │   └── authorize.middleware.js
 │   └── utils/
-│       ├── hash.js                  
-│       ├── jwt.js                   
-│       ├── validators.js           
-│       ├── errors.js                
-│       └── paths.js                 
+│       ├── hash.js
+│       ├── jwt.js
+│       ├── mailer.js                 
+│       ├── validators.js
+│       ├── errors.js
+│       └── paths.js
 ├── .env.example
 ├── .gitignore
 ├── package.json
@@ -88,6 +93,10 @@ proyecto-backend-ii/
 | GET    | `/api/events/:id`           | Detalle de un evento                                                 |
 | PUT    | `/api/events/:id`           | Modifica un evento                                                   |
 | PATCH  | `/api/events/:id/status`    | Cambia el estado del evento                                          |
+| POST   | `/api/events/:eid/tickets`  | Inscribirse a un evento                                              |
+| GET    | `/api/events/:eid/tickets`  | Lista las inscripciones de ese evento                                |
+| GET    | `/api/tickets/my-tickets`   | Lista mis inscripciones                                              |
+| PATCH  | `/api/tickets/:tid/cancel`  | Cancela una inscripción                                              |
 | POST   | `/api/sessions/register`    | Registro de usuario (estrategia `register`)                          |
 | POST   | `/api/sessions/login`       | Login de usuario (estrategia `login`, setea la cookie `currentUser`) |
 | GET    | `/api/sessions/current`     | Devuelve el usuario autenticado (estrategia `current`)               |
@@ -223,13 +232,18 @@ El modelo `User` tiene un campo `role` con default `'user'` y tres valores posib
 
 ### Matriz de permisos
 
-| Acción                              | `user` | `organizer` | `admin` |
-|--------------------------------------|:------:|:------------:|:-------:|
-| Consultar eventos publicados          | ✅     | ✅           | ✅      |
-| Crear eventos                         | ❌     | ✅           | ✅      |
-| Modificar/cancelar eventos propios    | ❌     | ✅           | ✅      |
-| Modificar cualquier evento            | ❌     | ❌           | ✅      |
-| Ver todos los usuarios                | ❌     | ❌           | ✅      |
+| Acción                                | `user` | `organizer` | `admin` |
+|-----------------------------------------|:------:|:------------:|:-------:|
+| Consultar eventos publicados             | ✅     | ✅           | ✅      |
+| Crear eventos                            | ❌     | ✅           | ✅      |
+| Modificar/cancelar eventos propios       | ❌     | ✅           | ✅      |
+| Modificar cualquier evento               | ❌     | ❌           | ✅      |
+| Inscribirse a un evento                  | ✅     | ✅           | ✅      |
+| Ver inscripciones de un evento propio    |  —     | ✅           | ✅      |
+| Ver inscripciones de cualquier evento    | ❌     | ❌           | ✅      |
+| Cancelar la propia inscripción           | ✅     | ✅           | ✅      |
+| Cancelar la inscripción de otro usuario  | ❌     | ❌           | ✅      |
+| Ver todos los usuarios                   | ❌     | ❌           | ✅      |
 
 ### 401 vs 403 — la diferencia
 
@@ -245,3 +259,31 @@ El modelo `User` tiene un campo `role` con default `'user'` y tres valores posib
 - **Publicar eventos finalizados o cancelados**: `PATCH .../status` con `status: published` se rechaza si el evento ya está `finished` o `cancelled`.
 - **El `organizer` nunca sale del body**: tanto al crear como al modificar, se ignora cualquier `organizer` que venga en el body — siempre se usa `req.user.id`.
 - **Borrado físico**: no existe un endpoint de `DELETE`. "Cancelar" un evento es cambiarle el `status` a `cancelled` vía `PATCH`.
+
+## Entidad `Ticket`
+
+### Flujo de inscripción — `POST /api/events/:eid/tickets`
+
+Validaciones en `tickets.service.js`:
+
+1. El evento existe (si no, `404`).
+2. El evento está `published` (si está en `draft`, `cancelled` o `finished`, `400`).
+3. `quantity` es un entero `> 0` (`400` si no).
+4. El usuario **no** tiene ya un ticket activo para ese evento — una inscripción por usuario por evento (`409` si ya tiene).
+5. Cupos disponibles: `capacity del evento − suma de quantity de tickets ACTIVOS` (los `cancelled` **no** ocupan cupo, por diseño de la query). Si `quantity` pedida supera lo disponible → `400` con el número de cupos que quedan.
+6. Se crea el ticket (`status: confirmed`) y se dispara el email de confirmación.
+
+### Cancelación — `PATCH /api/tickets/:tid/cancel`
+
+- Valida que el ticket exista (`404` si no).
+- Valida que sea el dueño del ticket, o `admin` (`403` si no).
+- Valida que no esté ya cancelado (`400` si ya lo está).
+- Cambia `status` a `cancelled` y completa `cancelledAt`. **Nunca borra el documento.**
+
+### Mis inscripciones — `GET /api/tickets/my-tickets`
+
+Devuelve los tickets del usuario autenticado, con el evento poblado (`title`, `date`, `location` — nunca el objeto completo). No expone tickets ni datos de otros usuarios.
+
+### Inscripciones de un evento — `GET /api/events/:eid/tickets`
+
+Acceso a nivel de ruta: `organizer` o `admin` (middleware `authorize`). Pero un `organizer` que no sea el dueño de **ese** evento puntual igual recibe `403` — esa validación de propiedad vive en `tickets.service.js`, igual que en `events.service.js`. Los tickets vienen con el usuario poblado, pero solo con `first_name`, `last_name`, `email` — nunca `password`.
