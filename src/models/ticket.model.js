@@ -1,7 +1,6 @@
 import { Schema, model, Types } from 'mongoose';
 import crypto from 'crypto';
-
-export const TICKET_STATUSES = ['pending', 'confirmed', 'cancelled'];
+import { TICKET_STATUSES } from '../utils/constants.js';
 
 const ticketSchema = new Schema(
     {

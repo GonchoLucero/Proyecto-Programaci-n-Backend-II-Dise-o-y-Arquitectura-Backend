@@ -1,6 +1,5 @@
 import { Schema, model, Types } from 'mongoose';
-
-export const EVENT_STATUSES = ['draft', 'published', 'cancelled', 'finished'];
+import { EVENT_STATUSES } from '../utils/constants.js';
 
 const eventSchema = new Schema(
     {

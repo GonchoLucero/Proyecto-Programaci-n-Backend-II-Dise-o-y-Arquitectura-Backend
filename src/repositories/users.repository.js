@@ -16,6 +16,10 @@ class UsersRepository {
     findById(id) {
         return this.dao.findById(id);
     }
+
+    findAll() {
+        return this.dao.findAll();
+    }
 }
 
 export default new UsersRepository(usersDao);

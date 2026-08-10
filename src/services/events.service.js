@@ -1,6 +1,6 @@
 import eventsRepository from '../repositories/events.repository.js';
 import { AppError } from '../utils/errors.js';
-import { EVENT_STATUSES } from '../models/event.model.js';
+import { EVENT_STATUSES } from '../utils/constants.js';
 
 const DEFAULT_LIMIT = 10;
 

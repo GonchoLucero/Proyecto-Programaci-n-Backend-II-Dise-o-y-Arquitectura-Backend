@@ -1,9 +1,10 @@
 import { generateToken } from '../utils/jwt.js';
 import { env } from '../config/env.js';
+import { userDTO } from '../dto/user.dto.js';
 
 export async function register(req, res, next) {
     try {
-        res.status(201).json({ status: 'success', payload: req.user });
+        res.status(201).json({ status: 'success', payload: userDTO(req.user) });
     } catch (error) {
         next(error);
     }
@@ -30,8 +31,7 @@ export async function login(req, res, next) {
 
 export async function current(req, res, next) {
     try {
-        const { id, email, role } = req.user;
-        res.status(200).json({ status: 'success', payload: { id, email, role } });
+        res.status(200).json({ status: 'success', payload: userDTO(req.user) });
     } catch (error) {
         next(error);
     }

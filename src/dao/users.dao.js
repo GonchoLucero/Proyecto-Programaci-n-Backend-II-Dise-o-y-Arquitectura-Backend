@@ -12,6 +12,10 @@ class UsersDao {
     async findById(id) {
         return userModel.findById(id);
     }
+
+    async findAll() {
+        return userModel.find();
+    }
 }
 
 export default new UsersDao();
