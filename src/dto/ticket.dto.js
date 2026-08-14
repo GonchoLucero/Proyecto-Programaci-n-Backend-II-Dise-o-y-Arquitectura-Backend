@@ -1,47 +1,37 @@
-import mongoose from 'mongoose';
-import { ticketModel } from '../models/ticket.model.js';
+import { userDTO } from './user.dto.js';
 
-class TicketsDao {
-    async create(ticketData) {
-        return ticketModel.create(ticketData);
-    }
-
-    async findById(id) {
-        return ticketModel.findById(id);
-    }
-
-    async findActiveByUserAndEvent(userId, eventId) {
-        return ticketModel.findOne({
-            user: userId,
-            event: eventId,
-            status: { $ne: 'cancelled' },
-        });
-    }
-
-    async countActiveQuantityByEvent(eventId) {
-        const result = await ticketModel.aggregate([
-            {
-                $match: {
-                    event: new mongoose.Types.ObjectId(eventId),
-                    status: { $ne: 'cancelled' },
-                },
-            },
-            { $group: { _id: null, total: { $sum: '$quantity' } } },
-        ]);
-        return result[0]?.total || 0;
-    }
-
-    async findByUser(userId) {
-        return ticketModel.find({ user: userId }).populate('event', 'title date location');
-    }
-
-    async findByEvent(eventId) {
-        return ticketModel.find({ event: eventId }).populate('user', 'first_name last_name email');
-    }
-
-    async update(id, updates) {
-        return ticketModel.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
-    }
+function isPopulatedUser(value) {
+    return value && typeof value === 'object' && 'email' in value;
 }
 
-export default new TicketsDao();
+function isPopulatedEvent(value) {
+    return value && typeof value === 'object' && 'title' in value;
+}
+
+function minimalEventDTO(event) {
+    return {
+        id: event._id?.toString?.() || event.id,
+        title: event.title,
+        date: event.date,
+        location: event.location,
+    };
+}
+
+export function ticketDTO(ticket) {
+    if (!ticket) return null;
+
+    return {
+        id: ticket._id?.toString?.() || ticket.id,
+        user: isPopulatedUser(ticket.user) ? userDTO(ticket.user) : ticket.user,
+        event: isPopulatedEvent(ticket.event) ? minimalEventDTO(ticket.event) : ticket.event,
+        status: ticket.status,
+        quantity: ticket.quantity,
+        reservationCode: ticket.reservationCode,
+        createdAt: ticket.createdAt,
+        cancelledAt: ticket.cancelledAt,
+    };
+}
+
+export function ticketListDTO(tickets = []) {
+    return tickets.map(ticketDTO);
+}

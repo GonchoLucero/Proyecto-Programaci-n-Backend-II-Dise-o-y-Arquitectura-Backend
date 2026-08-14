@@ -1,25 +1,28 @@
-import { eventModel } from '../models/event.model.js';
+import { userDTO } from './user.dto.js';
 
-class EventsDao {
-    async getAll({ filters = {}, skip = 0, limit = 10, sort = {} }) {
-        const [data, total] = await Promise.all([
-            eventModel.find(filters).sort(sort).skip(skip).limit(limit),
-            eventModel.countDocuments(filters),
-        ]);
-        return { data, total };
-    }
-
-    async getById(id) {
-        return eventModel.findById(id);
-    }
-
-    async create(eventData) {
-        return eventModel.create(eventData);
-    }
-
-    async update(id, updates) {
-        return eventModel.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
-    }
+function isPopulatedUser(value) {
+    return value && typeof value === 'object' && 'email' in value;
 }
 
-export default new EventsDao();
+export function eventDTO(event) {
+    if (!event) return null;
+
+    return {
+        id: event._id?.toString?.() || event.id,
+        title: event.title,
+        description: event.description,
+        category: event.category,
+        date: event.date,
+        location: event.location,
+        capacity: event.capacity,
+        price: event.price,
+        status: event.status,
+        organizer: isPopulatedUser(event.organizer) ? userDTO(event.organizer) : event.organizer,
+        createdAt: event.createdAt,
+        updatedAt: event.updatedAt,
+    };
+}
+
+export function eventListDTO(events = []) {
+    return events.map(eventDTO);
+}

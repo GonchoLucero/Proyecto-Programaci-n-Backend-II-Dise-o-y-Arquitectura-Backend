@@ -1,6 +1,6 @@
 import ticketsRepository from '../repositories/tickets.repository.js';
-import eventsRepository from '../repositories/events.repository.js';
-import usersRepository from '../repositories/users.repository.js';
+import eventsService from './events.service.js';
+import usersService from './users.service.js';
 import { sendTicketConfirmationEmail } from '../utils/mailer.js';
 import { AppError } from '../utils/errors.js';
 
@@ -10,10 +10,7 @@ class TicketsService {
     }
 
     async createTicket(eventId, currentUser, rawQuantity) {
-        const event = await eventsRepository.getById(eventId);
-        if (!event) {
-            throw new AppError('Evento no encontrado', 404);
-        }
+        const event = await eventsService.getEventById(eventId);
 
         if (event.status !== 'published') {
             throw new AppError('El evento no está disponible para inscripciones', 400);
@@ -44,7 +41,7 @@ class TicketsService {
             quantity,
         });
 
-        const user = await usersRepository.findById(currentUser.id);
+        const user = await usersService.getUserById(currentUser.id);
         await sendTicketConfirmationEmail({
             to: currentUser.email,
             userName: user?.first_name || currentUser.email,
@@ -62,10 +59,7 @@ class TicketsService {
     }
 
     async listEventTickets(eventId, currentUser) {
-        const event = await eventsRepository.getById(eventId);
-        if (!event) {
-            throw new AppError('Evento no encontrado', 404);
-        }
+        const event = await eventsService.getEventById(eventId);
 
         const isOwner = event.organizer?.toString() === currentUser.id;
         const isAdmin = currentUser.role === 'admin';
